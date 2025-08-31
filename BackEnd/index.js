@@ -7,6 +7,9 @@ app.use(express.json());
 
 // Routes
 app.use("/auth", authRoutes);
+const productRoutes = require("./routes/product");
+app.use("/products", productRoutes);
+
 
 // Test Route
 app.get("/", (req, res) => {
