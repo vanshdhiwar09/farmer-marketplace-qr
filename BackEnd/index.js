@@ -9,8 +9,8 @@ app.use(express.json());
 app.use("/auth", authRoutes);
 const productRoutes = require("./routes/product");
 app.use("/products", productRoutes);
-
-
+const orderRoutes = require("./routes/order");
+app.use("/orders", orderRoutes);
 // Test Route
 app.get("/", (req, res) => {
   res.send("Backend running...");
