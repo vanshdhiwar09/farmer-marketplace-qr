@@ -10,15 +10,19 @@ const Order = sequelize.define("Order", {
   status: { 
     type: DataTypes.ENUM("pending", "completed", "cancelled"), 
     defaultValue: "pending" 
-  }
+  },
+  farmer_id: { type: DataTypes.INTEGER, allowNull: false } // 👈 link order to farmer
 }, {
   timestamps: true
 });
 
 // Relations
-Order.belongsTo(User, { foreignKey: "consumer_id" });   // who placed the order
-Order.belongsTo(Product, { foreignKey: "product_id" }); // which product
+Order.belongsTo(User, { foreignKey: "consumer_id", as: "consumer" });   // who placed order
+Order.belongsTo(User, { foreignKey: "farmer_id", as: "farmer" });       // farmer of the product
+Order.belongsTo(Product, { foreignKey: "product_id" });                 // which product
+
 Product.hasMany(Order, { foreignKey: "product_id" });
 User.hasMany(Order, { foreignKey: "consumer_id" });
+User.hasMany(Order, { foreignKey: "farmer_id" });
 
 module.exports = Order;

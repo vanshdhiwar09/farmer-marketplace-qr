@@ -1,24 +1,31 @@
 const express = require("express");
+const cors = require("cors");
+const dotenv = require("dotenv");
 const sequelize = require("./config/db");
-const authRoutes = require("./routes/auth");
 
-const app = express(); // ✅ initialize app first
+const authRoutes = require("./routes/auth");
+const productRoutes = require("./routes/product");
+const orderRoutes = require("./routes/order");
+
+dotenv.config();
+const app = express();
+
+// ✅ Allow frontend (React) to talk to backend
+app.use(cors({
+  origin: "http://localhost:3000",   // your React dev server
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
+
 app.use(express.json());
 
 // Routes
 app.use("/auth", authRoutes);
-const productRoutes = require("./routes/product");
 app.use("/products", productRoutes);
-const orderRoutes = require("./routes/order");
 app.use("/orders", orderRoutes);
-// Test Route
-app.get("/", (req, res) => {
-  res.send("Backend running...");
+
+sequelize.sync().then(() => {
+  app.listen(5000, () => {
+    console.log("🚀 Server running on http://localhost:5000");
+  });
 });
-
-// Connect DB
-sequelize.authenticate()
-  .then(() => console.log("✅ Database connected"))
-  .catch(err => console.log("❌ Error: " + err));
-
-app.listen(5000, () => console.log("🚀 Server running on port 5000"));

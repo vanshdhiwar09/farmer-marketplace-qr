@@ -2,11 +2,16 @@ const express = require("express");
 const router = express.Router();
 const Order = require("../models/Order");
 const Product = require("../models/Product");
+const authMiddleware = require("../middleware/auth.js");
 
-// Place an order
-router.post("/place", async (req, res) => {
+// 🛒 Place an order (only consumer)
+router.post("/place", authMiddleware, async (req, res) => {
   try {
-    const { consumer_id, product_id, quantity } = req.body;
+    if (req.user.role !== "consumer") {
+      return res.status(403).json({ error: "Only consumers can place orders" });
+    }
+
+    const { product_id, quantity } = req.body;
 
     // Find product
     const product = await Product.findByPk(product_id);
@@ -14,11 +19,13 @@ router.post("/place", async (req, res) => {
 
     const total_price = product.price * quantity;
 
-    const order = await Order.create({ 
-      consumer_id, 
-      product_id, 
-      quantity, 
-      total_price 
+    const order = await Order.create({
+      consumer_id: req.user.userId,
+      product_id,
+      quantity,
+      total_price,
+      farmer_id: product.farmer_id, // link order to farmer
+      status: "Pending",
     });
 
     res.json({ message: "✅ Order placed", order });
@@ -27,10 +34,20 @@ router.post("/place", async (req, res) => {
   }
 });
 
-// Get all orders by consumer
-router.get("/consumer/:id", async (req, res) => {
+// 📦 Get all orders for logged-in user
+router.get("/", authMiddleware, async (req, res) => {
   try {
-    const orders = await Order.findAll({ where: { consumer_id: req.params.id } });
+    let orders;
+    if (req.user.role === "consumer") {
+      // Orders placed by consumer
+      orders = await Order.findAll({ where: { consumer_id: req.user.userId } });
+    } else if (req.user.role === "farmer") {
+      // Orders for farmer's products
+      orders = await Order.findAll({ where: { farmer_id: req.user.userId } });
+    } else {
+      return res.status(403).json({ error: "Invalid role" });
+    }
+
     res.json(orders);
   } catch (err) {
     res.status(500).json({ error: err.message });
